@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=3.0">
+<title>ตัวช่วยฉีดอินซูลิน</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700&family=Noto+Serif+Thai:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+<div class="app" id="app">
+
+  <header>
+    <button class="nav-back" id="backBtn" style="visibility:hidden;">←</button>
+    <div class="title">ตัวช่วยฉีดอินซูลิน</div>
+    <button class="icon" id="fontToggle" title="ขยายตัวอักษร">ก+</button>
+  </header>
+
+  <main id="mainArea">
+
+    <!-- LOGIN -->
+    <section class="screen active" id="screen-login">
+      <div class="card">
+        <div class="auth-mark">👋</div>
+        <h2 style="text-align:center;">เข้าสู่ระบบ</h2>
+        <label for="li-email">อีเมล</label>
+        <input type="email" id="li-email" placeholder="example@email.com">
+        <label for="li-password">รหัสผ่าน</label>
+        <input type="password" id="li-password">
+        <div id="loginError" class="error-text"></div>
+        <button class="btn btn-primary" style="margin-top:1rem;" onclick="handleLogin()">เข้าสู่ระบบ</button>
+        <button class="btn-ghost" onclick="handleForgotPassword()">ลืมรหัสผ่าน?</button>
+        <div class="auth-switch">
+          ยังไม่มีบัญชี? <button class="btn-ghost" onclick="switchToSignup()">สมัครสมาชิกที่นี่</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- SIGNUP -->
+    <section class="screen" id="screen-signup">
+      <div class="card">
+        <div class="auth-mark">🌱</div>
+        <h2 style="text-align:center;">สมัครสมาชิก</h2>
+        <label for="su-name">ชื่อ-นามสกุล</label>
+        <input type="text" id="su-name" placeholder="เช่น สมชาย ใจดี">
+        <label for="su-email">อีเมล</label>
+        <input type="email" id="su-email" placeholder="example@email.com">
+        <label for="su-password">ตั้งรหัสผ่าน (อย่างน้อย 6 ตัวอักษร)</label>
+        <input type="password" id="su-password">
+        <div class="checkbox-row">
+          <input type="checkbox" id="su-consent">
+          <label for="su-consent" style="margin:0; font-weight:400;">
+            ข้าพเจ้ายินยอมให้จัดเก็บข้อมูลส่วนตัวและข้อมูลสุขภาพนี้ เพื่อใช้คำนวณและบันทึกประวัติการฉีดอินซูลินของข้าพเจ้าเท่านั้น
+          </label>
+        </div>
+        <div id="signupError" class="error-text"></div>
+        <button class="btn btn-primary" style="margin-top:1rem;" onclick="handleSignup()">สมัครสมาชิก</button>
+        <div class="auth-switch">
+          มีบัญชีอยู่แล้ว? <button class="btn-ghost" onclick="switchToLogin()">เข้าสู่ระบบ</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ONBOARDING / PROFILE SETTINGS -->
+    <section class="screen" id="screen-onboard">
+      <div class="card">
+        <h2>ข้อมูลส่วนตัว</h2>
+        <label>ชื่อ-นามสกุล</label>
+        <input type="text" id="ob-name">
+        <label>อายุ (ปี)</label>
+        <input type="number" id="ob-age" min="1" max="120">
+        <label>เป็นเบาหวานมาแล้วกี่ปี</label>
+        <input type="number" id="ob-years" min="0" max="100">
+      </div>
+
+      <div class="card">
+        <h3>ค่าที่แพทย์กำหนดให้ (สำคัญมาก)</h3>
+        <p class="hint">ค่าด้านล่างนี้ <b>ต้องได้รับจากแพทย์หรือทีมเบาหวานของท่าน</b> ห้ามเดาเอง หากยังไม่ทราบ ให้กดปุ่ม "ยังไม่ทราบค่า" ด้านล่าง</p>
+        <label>อัตราส่วนอินซูลินต่อคาร์โบไฮเดรต (I:C) — 1 หน่วยต่อกี่กรัม</label>
+        <input type="number" id="ob-ic" placeholder="เช่น 10 (หมายถึง 1:10)">
+        <label>ค่าอินซูลินลดน้ำตาล (Correction Factor) — 1 หน่วยลดน้ำตาลกี่ mg/dl</label>
+        <input type="number" id="ob-isf" placeholder="เช่น 50">
+        <label>ระดับน้ำตาลเป้าหมายก่อนมื้ออาหาร (mg/dl)</label>
+        <input type="number" id="ob-target" placeholder="เช่น 120">
+        <label>ระดับน้ำตาลต่ำอันตราย (แจ้งเตือน) (mg/dl)</label>
+        <input type="number" id="ob-low" placeholder="เช่น 70" value="70">
+        <label>ปากกาอินซูลินของท่านปรับหน่วยละเท่าไร</label>
+        <select id="ob-increment">
+          <option value="1">ทีละ 1 หน่วย</option>
+          <option value="0.5">ทีละ 0.5 หน่วย</option>
+        </select>
+        <button class="btn btn-outline" style="margin-top:1rem;" onclick="showEstimator()">ยังไม่ทราบค่า — ช่วยประมาณเบื้องต้น</button>
+      </div>
+
+      <div class="card" id="estimatorCard" style="display:none; border-color:var(--accent);">
+        <h3>ตัวช่วยประมาณเบื้องต้น</h3>
+        <p class="hint">การประมาณนี้ใช้สูตรน้ำหนักตัวคร่าวๆ เท่านั้น <b>ไม่ใช่ค่าที่ใช้ฉีดจริง</b> กรุณานำตัวเลขนี้ไปปรึกษาแพทย์ก่อนนำไปใช้เสมอ</p>
+        <label>น้ำหนักตัว (กิโลกรัม)</label>
+        <input type="number" id="est-weight" placeholder="เช่น 65">
+        <button class="btn btn-accent" onclick="runEstimator()">คำนวณค่าประมาณ</button>
+        <div id="estimatorResult"></div>
+      </div>
+
+      <button class="btn btn-primary" onclick="saveOnboard()">บันทึกข้อมูล</button>
+    </section>
+
+    <!-- HOME -->
+    <section class="screen" id="screen-home">
+      <div class="card hero-card">
+        <h2 id="homeGreeting">สวัสดี</h2>
+        <p class="hint" id="homeSub"></p>
+      </div>
+
+      <button class="tile tile-primary" onclick="goto('calc-type')">
+        <span class="tile-icon">💉</span>
+        <span class="tile-label">
+          <strong>คำนวณขนาดอินซูลิน</strong>
+          <small>คาร์บมื้ออาหาร + แก้ไขน้ำตาลสูง</small>
+        </span>
+        <span class="tile-arrow">›</span>
+      </button>
+
+      <button class="tile tile-accent" onclick="goto('food')">
+        <span class="tile-icon">🍚</span>
+        <span class="tile-label">
+          <strong>ค้นหาคาร์โบไฮเดรตในอาหาร</strong>
+          <small>ฐานข้อมูลอาหารไทย + ถ่ายรูป</small>
+        </span>
+        <span class="tile-arrow">›</span>
+      </button>
+
+      <button class="tile" onclick="goto('history')">
+        <span class="tile-icon">📋</span>
+        <span class="tile-label">
+          <strong>ประวัติการฉีด</strong>
+          <small>ดูรายการย้อนหลังทั้งหมด</small>
+        </span>
+        <span class="tile-arrow">›</span>
+      </button>
+
+      <button class="tile" onclick="openSettings()">
+        <span class="tile-icon">⚙️</span>
+        <span class="tile-label">
+          <strong>ข้อมูลส่วนตัว / ตั้งค่า</strong>
+          <small>ปรับค่าที่แพทย์กำหนด</small>
+        </span>
+        <span class="tile-arrow">›</span>
+      </button>
+
+      <button class="btn btn-ghost" onclick="logout()" style="margin-top:.5rem;">ออกจากระบบ</button>
+    </section>
+
+    <!-- CALCULATOR: CHOOSE TYPE -->
+    <section class="screen" id="screen-calc-type">
+      <div class="card">
+        <h2>เลือกประเภทการคำนวณ</h2>
+      </div>
+
+      <button class="tile tile-primary" onclick="startCalc('carb')">
+        <span class="tile-icon">🍽️</span>
+        <span class="tile-label">
+          <strong>คำนวณตามมื้ออาหาร</strong>
+          <small>จากปริมาณคาร์โบไฮเดรต</small>
+        </span>
+        <span class="tile-arrow">›</span>
+      </button>
+
+      <button class="tile tile-accent" onclick="startCalc('correction')">
+        <span class="tile-icon">🩸</span>
+        <span class="tile-label">
+          <strong>คำนวณแก้ไขน้ำตาลสูง</strong>
+          <small>จากค่าน้ำตาลในเลือด</small>
+        </span>
+        <span class="tile-arrow">›</span>
+      </button>
+
+      <button class="tile" onclick="startCalc('both')">
+        <span class="tile-icon">🍽️🩸</span>
+        <span class="tile-label">
+          <strong>คำนวณทั้งสองอย่าง</strong>
+          <small>มื้ออาหารและน้ำตาลพร้อมกัน</small>
+        </span>
+        <span class="tile-arrow">›</span>
+      </button>
+    </section>
+
+    <!-- CALCULATOR: INPUT -->
+    <section class="screen" id="screen-calc-input">
+      <div class="card" id="calc-carb-block">
+        <h3>ข้อมูลมื้ออาหาร</h3>
+        <label>ปริมาณคาร์โบไฮเดรตในมื้อนี้ (กรัม)</label>
+        <input type="number" id="calc-carbs" placeholder="เช่น 60">
+        <p class="hint">ไม่แน่ใจปริมาณคาร์บ? ใช้เมนู "ค้นหาคาร์โบไฮเดรตในอาหาร" จากหน้าหลักก่อนได้</p>
+      </div>
+      <div class="card" id="calc-bg-block">
+        <h3>ระดับน้ำตาลปัจจุบัน</h3>
+        <label>ระดับน้ำตาลในเลือดตอนนี้ (mg/dl)</label>
+        <input type="number" id="calc-bg" placeholder="เช่น 220">
+      </div>
+      <button class="btn btn-primary" onclick="calculate()">คำนวณ</button>
+      <div id="calcResultArea"></div>
+    </section>
+
+    <!-- FOOD SEARCH -->
+    <section class="screen" id="screen-food">
+      <div class="card">
+        <h2>ค้นหาคาร์โบไฮเดรตในอาหาร</h2>
+        <input type="text" id="foodSearch" placeholder="พิมพ์ชื่ออาหาร เช่น ข้าวผัด" oninput="renderFoodList()">
+        <p class="hint">ค่าคาร์โบไฮเดรตเป็นค่าประมาณต่อ 1 หน่วยบริโภคทั่วไป ปริมาณจริงอาจต่างกันตามขนาดจาน/สูตรอาหาร</p>
+      </div>
+      <div class="card">
+        <h3>📷 ถ่ายรูปอาหาร</h3>
+        <p class="hint" id="foodScanHint">ถ่ายรูปอาหารเพื่อวิเคราะห์อัตโนมัติ (ต้องตั้งค่าระบบวิเคราะห์ภาพก่อน ดู README.md) หรือค้นหา/กรอกปริมาณคาร์บด้วยตนเองด้านล่าง</p>
+        <button class="btn btn-outline" onclick="openCamera()">เปิดกล้องถ่ายรูปอาหาร</button>
+        <video id="camVideo" autoplay playsinline style="display:none;"></video>
+        <button class="btn btn-accent" id="snapBtn" style="display:none;" onclick="snapPhoto()">📸 ถ่ายภาพ</button>
+        <canvas id="camCanvas" style="display:none;"></canvas>
+      </div>
+      <div class="card">
+        <div class="search-results" id="foodResults"></div>
+      </div>
+    </section>
+
+    <!-- HISTORY -->
+    <section class="screen" id="screen-history">
+      <div class="card">
+        <h2>ประวัติการฉีดอินซูลิน</h2>
+        <div id="historyList"></div>
+      </div>
+    </section>
+
+  </main>
+
+  <div class="footer-disclaimer">
+    ⚠️ แอปนี้เป็นเพียงเครื่องมือช่วยคำนวณเบื้องต้น ไม่ใช่คำแนะนำทางการแพทย์และไม่ใช่อุปกรณ์การแพทย์ กรุณาปรึกษาแพทย์หรือทีมดูแลเบาหวานของท่านก่อนปรับขนาดอินซูลินทุกครั้ง
+  </div>
+</div>
+
+<script src="js/config.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
